@@ -28,7 +28,25 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
 
-  final List<double> sliderValues = [5, 10, 0, 1, 30, 1000000];
+  List<Function> _screens;
+  int _selectedBarIndex = 0;
+  final Map<CalcValue, num> calcValues = {
+    CalcValue.attractionRate : 5.0,
+    CalcValue.placementRate : 10,
+    CalcValue.PD : 0,
+    CalcValue.LGD : 1,
+    CalcValue.placementTime : 30,
+    CalcValue.portfolioSum : 1000000,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      _getCalcScreen,
+      _getCalcScreen
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,39 +55,49 @@ class _MainPageState extends State<MainPage> {
           title: Text(widget.title),
         ),
         body: Center(
-          child: _getFirstScreen(),
+          child: _screens[_selectedBarIndex](),
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+            items: <BottomNavigationBarItem> [
+              BottomNavigationBarItem(icon: Icon(Icons.home), title: Text('Base')),
+              BottomNavigationBarItem(icon: Icon(Icons.account_balance), title: Text('More'))
+            ],
+            currentIndex: _selectedBarIndex,
+            onTap: (int index) {
+              setState(() {
+                _selectedBarIndex = index;
+              });
+            }
         )
     );
   }
 
-  Widget _getFirstScreen() {
-    return FirstScreen(
-        sliderValues,
-            (int index, double value) {
+  Widget _getCalcScreen() {
+    return CalcScreen(
+        calcValues,
+        (CalcValue index, num value) {
           setState(() {
-            sliderValues[index] = value;
+            calcValues[index] = value;
           });
         }
     );
   }
 }
 
-class FirstScreen extends StatelessWidget {
-  final List<double> values;
-  final double MDi;
-  final double LGD;
-  final double tokenSize;
+enum CalcValue { attractionRate, placementRate, PD, LGD, placementTime, portfolioSum }
+class CalcScreen extends StatelessWidget {
+  final Map<CalcValue, num> values;
   final double bankIncome;
-  final Function(int index, double value) callback;
+  final Function(CalcValue index, num value) callback;
 
-  FirstScreen._(this.values, this.callback, this.MDi, this.LGD, this.tokenSize, this.bankIncome);
+  CalcScreen._(this.values, this.callback, this.bankIncome);
 
-  factory FirstScreen(List<double> values, Function callback) {
-    double LGD = (1 - pow((1 - (values[2] / 100)), (values[4] / 365))) * 100;
-    double MDi = ((values[1] / 100) - (365 / values[4] + (values[1] / 100)) * (values[3] / 100) * (LGD / 100)) * 100;
-    double tokenSize = values[5] * (1 + (values[0] / 100) * values[4] / 365) / (1 + (MDi / 100) * values[4] / 365);
-    double bankIncome = values[5] - tokenSize;
-    return FirstScreen._(values, callback, MDi, LGD, tokenSize, bankIncome);
+  factory CalcScreen(Map<CalcValue, num> values, Function callback) {
+    double LGD = (1 - pow((1 - (values[CalcValue.PD] / 100)), (values[CalcValue.placementTime] / 365))) * 100;
+    double MDi = ((values[CalcValue.placementRate] / 100) - (365 / values[CalcValue.placementTime] + (values[CalcValue.placementRate] / 100)) * (values[CalcValue.LGD] / 100) * (LGD / 100)) * 100;
+    double tokenSize = values[CalcValue.portfolioSum] * (1 + (values[CalcValue.attractionRate] / 100) * values[CalcValue.placementTime] / 365) / (1 + (MDi / 100) * values[CalcValue.placementTime] / 365);
+    double bankIncome = values[CalcValue.portfolioSum] - tokenSize;
+    return CalcScreen._(values, callback, bankIncome);
   }
 
   @override
@@ -77,44 +105,44 @@ class FirstScreen extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
-        Text('Ставка привлечения в процентах: ${values[0]}'),
+        Text('Ставка привлечения в процентах: ${values[CalcValue.attractionRate]}'),
         Slider(
-          value: values[0],
+          value: values[CalcValue.attractionRate],
           max: 30,
           divisions: 60,
           onChanged: (value) {
-            callback(0, double.parse(value.toStringAsFixed(1)));
+            callback(CalcValue.attractionRate, double.parse(value.toStringAsFixed(1)));
           },
         ),
-        Text('Ставка размещения в процентах: ${values[1].toStringAsFixed(0)}'),
-        _createHundredSlider(1),
-        Text('PD: ${values[2].toStringAsFixed(0)}'),
+        Text('Ставка размещения в процентах: ${values[CalcValue.placementRate]}'),
+        _createHundredSlider(CalcValue.placementRate),
+        Text('PD: ${values[CalcValue.PD]}'),
         Slider(
-            value: values[2],
+            value: values[CalcValue.PD].toDouble(),
             max: 20,
             divisions: 20,
             onChanged: (value) {
-              callback(2, value.roundToDouble());
+              callback(CalcValue.PD, value.round());
             }
         ),
-        Text('LGD: ${values[3].toStringAsFixed(0)}'),
-        _createHundredSlider(3),
-        Text('Срок размещения: ${values[4].toStringAsFixed(0)}'),
+        Text('LGD: ${values[CalcValue.LGD]}'),
+        _createHundredSlider(CalcValue.LGD),
+        Text('Срок размещения: ${values[CalcValue.placementTime]}'),
         Slider(
-          value: values[4],
+          value: values[CalcValue.placementTime].toDouble(),
           max: 365,
           divisions: 365,
           onChanged: (value) {
-            callback(4, value.roundToDouble());
+            callback(CalcValue.placementTime, value.round());
           },
         ),
-        Text('Сумма токенизируемого портфеля: ${values[5].toStringAsFixed(0)}'),
+        Text('Сумма токенизируемого портфеля: ${values[CalcValue.portfolioSum]}'),
         Slider(
-          value: values[5],
+          value: values[CalcValue.portfolioSum].toDouble(),
           max: 10000000,
           divisions: 100,
           onChanged: (value) {
-            callback(5, value.roundToDouble());
+            callback(CalcValue.portfolioSum, value.round());
           },
         ),
         Container(
@@ -122,7 +150,7 @@ class FirstScreen extends StatelessWidget {
           child: Column(
             children: <Widget>[
               Text('Доход банка: ${bankIncome.toStringAsFixed(2)}'),
-              Text('Доход банка в %: ${(bankIncome / values[5] * 100).toStringAsFixed(2)}'),
+              Text('Доход банка в %: ${(bankIncome / values[CalcValue.portfolioSum] * 100).toStringAsFixed(2)}'),
             ],
           ),
         )
@@ -130,13 +158,13 @@ class FirstScreen extends StatelessWidget {
     );
   }
 
-  Slider _createHundredSlider(int position) {
+  Slider _createHundredSlider(CalcValue calcValue) {
     return Slider(
-        value: values[position],
+        value: values[calcValue].toDouble(),
         max: 100,
         divisions: 100,
         onChanged: (value) {
-          callback(position, value.roundToDouble());
+          callback(calcValue, value.round());
         }
     );
   }
