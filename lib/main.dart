@@ -38,12 +38,33 @@ class _MainPageState extends State<MainPage> {
     CalcValue.placementTime : 30,
     CalcValue.portfolioSum : 1000000,
   };
+  final Map<TokenizationValue, num> tokenizationValues = {
+    TokenizationValue.creditsCount : 30,
+    TokenizationValue.PD : 20,
+    TokenizationValue.LGD : 10,
+    TokenizationValue.creditSum : 50,
+  };
+  final Map<EmulationValue, num> emulationValues = {
+    EmulationValue.peopleCount : 30,
+    EmulationValue.minSaleProp : 20,
+    EmulationValue.minBuyProp : 10,
+    EmulationValue.minSkipProp : 50,
+    EmulationValue.initAssets : 40,
+    EmulationValue.minSellPart : 30,
+    EmulationValue.maxSellPart : 50,
+  };
+  final Map<RialtoValue, num> rialtoValues = {
+    RialtoValue.attractionRate : 5,
+    RialtoValue.placementRate : 10,
+  };
 
   @override
   void initState() {
     super.initState();
     _screens = [
-      _getCalcScreen,
+      _getTokenizationScreen,
+      _getEmulationScreen,
+      _getRialtoScreen,
       _getCalcScreen
     ];
   }
@@ -58,9 +79,12 @@ class _MainPageState extends State<MainPage> {
           child: _screens[_selectedBarIndex](),
         ),
         bottomNavigationBar: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
             items: <BottomNavigationBarItem> [
-              BottomNavigationBarItem(icon: Icon(Icons.home), title: Text('Base')),
-              BottomNavigationBarItem(icon: Icon(Icons.account_balance), title: Text('More'))
+              BottomNavigationBarItem(icon: Icon(Icons.work), title: Text('Tokenization')),
+              BottomNavigationBarItem(icon: Icon(Icons.group), title: Text('Emulation')),
+              BottomNavigationBarItem(icon: Icon(Icons.account_balance), title: Text('Rialto')),
+              BottomNavigationBarItem(icon: Icon(Icons.cloud_off), title: Text('Calculator'))
             ],
             currentIndex: _selectedBarIndex,
             onTap: (int index) {
@@ -78,6 +102,39 @@ class _MainPageState extends State<MainPage> {
         (CalcValue index, num value) {
           setState(() {
             calcValues[index] = value;
+          });
+        }
+    );
+  }
+
+  Widget _getTokenizationScreen() {
+    return TokenizationScreen(
+      tokenizationValues,
+      (TokenizationValue index, num value) {
+        setState(() {
+          tokenizationValues[index] = value;
+        });
+      }
+    );
+  }
+
+  Widget _getEmulationScreen() {
+    return EmulationScreen(
+        emulationValues,
+        (EmulationValue index, num value) {
+          setState(() {
+            emulationValues[index] = value;
+          });
+        }
+    );
+  }
+
+  Widget _getRialtoScreen() {
+    return RialtoScreen(
+        rialtoValues,
+        (RialtoValue index, num value) {
+          setState(() {
+            rialtoValues[index] = value;
           });
         }
     );
@@ -165,6 +222,117 @@ class CalcScreen extends StatelessWidget {
         divisions: 100,
         onChanged: (value) {
           callback(calcValue, value.round());
+        }
+    );
+  }
+}
+
+enum TokenizationValue { creditsCount, PD, LGD, creditSum }
+class TokenizationScreen extends StatelessWidget {
+  final Map<TokenizationValue, num> values;
+  final Function(TokenizationValue index, num value) callback;
+
+  TokenizationScreen(this.values, this.callback);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        Text('Количество кредитов: ${values[TokenizationValue.creditsCount]}'),
+        _createHundredSlider(TokenizationValue.creditsCount),
+        Text('PD: ${values[TokenizationValue.PD]}'),
+        _createHundredSlider(TokenizationValue.PD),
+        Text('LGD: ${values[TokenizationValue.LGD]}'),
+        _createHundredSlider(TokenizationValue.LGD),
+        Text('Сумма кредита: ${values[TokenizationValue.creditSum]}'),
+        _createHundredSlider(TokenizationValue.creditSum),
+      ],
+    );
+  }
+
+  Slider _createHundredSlider(TokenizationValue field) {
+    return Slider(
+        value: values[field].toDouble(),
+        max: 100,
+        divisions: 20,
+        onChanged: (value) {
+          callback(field, value.round());
+        }
+    );
+  }
+}
+
+enum EmulationValue { peopleCount, minSaleProp, minBuyProp, minSkipProp, initAssets, minSellPart, maxSellPart }
+class EmulationScreen extends StatelessWidget {
+  final Map<EmulationValue, num> values;
+  final Function(EmulationValue index, num value) callback;
+
+  EmulationScreen(this.values, this.callback);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        Text('Количество людей: ${values[EmulationValue.peopleCount]}'),
+        _createHundredSlider(EmulationValue.peopleCount),
+        Text('Минимальная вероятность продажи: ${values[EmulationValue.minSaleProp]}'),
+        _createHundredSlider(EmulationValue.minSaleProp),
+        Text('Минимальная вероятность покупки: ${values[EmulationValue.minBuyProp]}'),
+        _createHundredSlider(EmulationValue.minBuyProp),
+        Text('Минимальная вероятность пропуска: ${values[EmulationValue.minSkipProp]}'),
+        _createHundredSlider(EmulationValue.minSkipProp),
+        Text('Начальные активы: ${values[EmulationValue.initAssets]}'),
+        _createHundredSlider(EmulationValue.initAssets),
+        Text('Минимальная доля для продажи: ${values[EmulationValue.minSellPart]}'),
+        _createHundredSlider(EmulationValue.minSellPart),
+        Text('Максимальная доля для продажи: ${values[EmulationValue.maxSellPart]}'),
+        _createHundredSlider(EmulationValue.maxSellPart),
+      ],
+    );
+  }
+
+  Slider _createHundredSlider(EmulationValue field) {
+    return Slider(
+        value: values[field].toDouble(),
+        max: 100,
+        divisions: 20,
+        onChanged: (value) {
+          callback(field, value.round());
+        }
+    );
+  }
+}
+
+enum RialtoValue { attractionRate, placementRate }
+class RialtoScreen extends StatelessWidget {
+  final Map<RialtoValue, num> values;
+  final Function(RialtoValue index, num value) callback;
+
+
+  RialtoScreen(this.values, this.callback);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        Text('Ставка привлечения: ${values[RialtoValue.attractionRate]}'),
+        _createHundredSlider(RialtoValue.attractionRate),
+        Text('Ставка размещения: ${values[RialtoValue.placementRate]}'),
+        _createHundredSlider(RialtoValue.placementRate),
+      ],
+    );
+  }
+
+  Slider _createHundredSlider(RialtoValue field) {
+    return Slider(
+        value: values[field].toDouble(),
+        max: 100,
+        divisions: 20,
+        onChanged: (value) {
+          callback(field, value.round());
         }
     );
   }
