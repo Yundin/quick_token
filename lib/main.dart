@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 void main() => runApp(MyApp());
 
@@ -45,13 +47,9 @@ class _MainPageState extends State<MainPage> {
     TokenizationValue.creditSum : 50,
   };
   final Map<EmulationValue, num> emulationValues = {
-    EmulationValue.peopleCount : 30,
-    EmulationValue.minSaleProp : 20,
-    EmulationValue.minBuyProp : 10,
-    EmulationValue.minSkipProp : 50,
-    EmulationValue.initAssets : 40,
-    EmulationValue.minSellPart : 30,
-    EmulationValue.maxSellPart : 50,
+    EmulationValue.meanmoney : 100000,
+    EmulationValue.peopleCount : 5,
+    EmulationValue.days : 60
   };
   final Map<RialtoValue, num> rialtoValues = {
     RialtoValue.attractionRate : 5,
@@ -132,6 +130,8 @@ class _MainPageState extends State<MainPage> {
   Widget _getRialtoScreen() {
     return RialtoScreen(
         rialtoValues,
+        emulationValues,
+        tokenizationValues,
         (RialtoValue index, num value) {
           setState(() {
             rialtoValues[index] = value;
@@ -263,7 +263,7 @@ class TokenizationScreen extends StatelessWidget {
   }
 }
 
-enum EmulationValue { peopleCount, minSaleProp, minBuyProp, minSkipProp, initAssets, minSellPart, maxSellPart }
+enum EmulationValue { meanmoney, peopleCount, days }
 class EmulationScreen extends StatelessWidget {
   final Map<EmulationValue, num> values;
   final Function(EmulationValue index, num value) callback;
@@ -275,64 +275,123 @@ class EmulationScreen extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
+        Text('Начальные деньги людей: ${values[EmulationValue.meanmoney]}'),
+        Slider(
+            value: values[EmulationValue.meanmoney].toDouble(),
+            max: 1000000,
+            divisions: 20,
+            onChanged: (value) {
+              callback(EmulationValue.meanmoney, value.round());
+            }
+        ),
         Text('Количество людей: ${values[EmulationValue.peopleCount]}'),
-        _createHundredSlider(EmulationValue.peopleCount),
-        Text('Минимальная вероятность продажи: ${values[EmulationValue.minSaleProp]}'),
-        _createHundredSlider(EmulationValue.minSaleProp),
-        Text('Минимальная вероятность покупки: ${values[EmulationValue.minBuyProp]}'),
-        _createHundredSlider(EmulationValue.minBuyProp),
-        Text('Минимальная вероятность пропуска: ${values[EmulationValue.minSkipProp]}'),
-        _createHundredSlider(EmulationValue.minSkipProp),
-        Text('Начальные активы: ${values[EmulationValue.initAssets]}'),
-        _createHundredSlider(EmulationValue.initAssets),
-        Text('Минимальная доля для продажи: ${values[EmulationValue.minSellPart]}'),
-        _createHundredSlider(EmulationValue.minSellPart),
-        Text('Максимальная доля для продажи: ${values[EmulationValue.maxSellPart]}'),
-        _createHundredSlider(EmulationValue.maxSellPart),
+        Slider(
+            value: values[EmulationValue.peopleCount].toDouble(),
+            max: 15,
+            min: 3,
+            divisions: 13,
+            onChanged: (value) {
+              callback(EmulationValue.peopleCount, value.round());
+            }
+        ),
+        Text('Количество дней эмуляции: ${values[EmulationValue.days]}'),
+        Slider(
+            value: values[EmulationValue.days].toDouble(),
+            max: 365,
+            min: 50,
+            divisions: 316,
+            onChanged: (value) {
+              callback(EmulationValue.days, value.round());
+            }
+        )
       ],
-    );
-  }
-
-  Slider _createHundredSlider(EmulationValue field) {
-    return Slider(
-        value: values[field].toDouble(),
-        max: 100,
-        divisions: 20,
-        onChanged: (value) {
-          callback(field, value.round());
-        }
     );
   }
 }
 
 enum RialtoValue { attractionRate, placementRate }
-class RialtoScreen extends StatelessWidget {
+class RialtoScreen extends StatefulWidget {
   final Map<RialtoValue, num> values;
+  final Map<EmulationValue, num> emulationValues;
+  final Map<TokenizationValue, num> tokenizationValues;
   final Function(RialtoValue index, num value) callback;
 
 
-  RialtoScreen(this.values, this.callback);
+  RialtoScreen(this.values, this.emulationValues, this.tokenizationValues, this.callback);
+
+  @override
+  _RialtoScreenState createState() => _RialtoScreenState();
+}
+
+class _RialtoScreenState extends State<RialtoScreen> {
+
+  bool requestPending = false;
+  Future<http.Response> future;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
-        Text('Ставка привлечения: ${values[RialtoValue.attractionRate]}'),
+        Text('Ставка привлечения: ${widget.values[RialtoValue.attractionRate]}'),
         _createHundredSlider(RialtoValue.attractionRate),
-        Text('Ставка размещения: ${values[RialtoValue.placementRate]}'),
+        Text('Ставка размещения: ${widget.values[RialtoValue.placementRate]}'),
         _createHundredSlider(RialtoValue.placementRate),
+        Padding(
+          padding: EdgeInsets.only(top: 70),
+          child: requestState(),
+        )
       ],
     );
   }
 
+  Widget requestState() {
+    if (!requestPending) {
+      return RaisedButton(
+        onPressed: () {
+          setState(() {
+            requestPending = true;
+            future = http.post(
+                "http://emulation.dlbas.me/emulate",
+                body: json.encode(
+                    {}..addAll(
+                        widget.values.map(mapEntry)
+                    )..addAll(
+                        widget.emulationValues.map(mapEntry)
+                    )..addAll(
+                        widget.tokenizationValues.map(mapEntry)
+                    )
+                )
+            );
+          });
+        },
+        child: const Text('Начать эмуляцию'),
+      );
+    } else {
+      return FutureBuilder<http.Response>(
+        future: future,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            print(snapshot.data.statusCode);
+            return Text('Эмуляция запущена');
+          } else if (snapshot.hasError) {
+            return Text('Ошибка');
+          }
+          return CircularProgressIndicator();
+        },
+      );
+    }
+  }
+
+  var mapEntry = (key, value) => MapEntry(key.toString().split('.').last, value);
+
   Slider _createHundredSlider(RialtoValue field) {
     return Slider(
-        value: values[field].toDouble(),
+        value: widget.values[field].toDouble(),
         max: 100,
         divisions: 20,
         onChanged: (value) {
-          callback(field, value.round());
+          widget.callback(field, value.round());
         }
     );
   }
