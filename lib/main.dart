@@ -63,7 +63,8 @@ class _MainPageState extends State<MainPage> {
       _getTokenizationScreen,
       _getEmulationScreen,
       _getRialtoScreen,
-      _getCalcScreen
+      _getCalcScreen,
+      () => ThreeButtonsWidget()
     ];
   }
 
@@ -82,7 +83,8 @@ class _MainPageState extends State<MainPage> {
               BottomNavigationBarItem(icon: Icon(Icons.work), title: Text('Tokenization')),
               BottomNavigationBarItem(icon: Icon(Icons.group), title: Text('Emulation')),
               BottomNavigationBarItem(icon: Icon(Icons.account_balance), title: Text('Rialto')),
-              BottomNavigationBarItem(icon: Icon(Icons.cloud_off), title: Text('Calculator'))
+              BottomNavigationBarItem(icon: Icon(Icons.cloud_off), title: Text('Calculator')),
+              BottomNavigationBarItem(icon: Icon(Icons.account_box), title: Text('Account'))
             ],
             currentIndex: _selectedBarIndex,
             onTap: (int index) {
@@ -347,7 +349,9 @@ class _RialtoScreenState extends State<RialtoScreen> {
 
   Widget requestState() {
     if (!requestPending) {
-      return RaisedButton(
+      return MaterialButton(
+        color: Theme.of(context).primaryColor,
+        textColor: Colors.white,
         onPressed: () {
           setState(() {
             requestPending = true;
@@ -393,6 +397,39 @@ class _RialtoScreenState extends State<RialtoScreen> {
         onChanged: (value) {
           widget.callback(field, value.round());
         }
+    );
+  }
+}
+
+class ThreeButtonsWidget extends StatelessWidget {
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          MaterialButton(
+            minWidth: 180.0,
+            color: Theme.of(context).primaryColor,
+            textColor: Colors.white,
+            onPressed: () {},
+            child: Text('Купить')
+          ),
+          MaterialButton(
+            minWidth: 180.0,
+            color: Theme.of(context).primaryColor,
+            textColor: Colors.white,
+            onPressed: () {},
+            child: Text('Продать')
+          ),
+          MaterialButton(
+            minWidth: 180.0,
+            color: Theme.of(context).primaryColor,
+            textColor: Colors.white,
+            onPressed: () {},
+            child: Text('Воздержаться')
+          )
+        ]
     );
   }
 }
