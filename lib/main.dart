@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+//import 'package:charts_flutter/flutter.dart' as charts;
+//import 'package:flutter_plot/flutter_plot.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() => runApp(MyApp());
 
@@ -341,50 +344,89 @@ class _RialtoScreenState extends State<RialtoScreen> {
         _createHundredSlider(RialtoValue.placementRate),
         Padding(
           padding: EdgeInsets.only(top: 70),
-          child: requestState(),
+          child: getQueryWidget(),
         )
       ],
     );
   }
 
-  Widget requestState() {
-    if (!requestPending) {
-      return MaterialButton(
-        color: Theme.of(context).primaryColor,
-        textColor: Colors.white,
-        onPressed: () {
-          setState(() {
-            requestPending = true;
-            future = http.post(
-                "http://emulation.dlbas.me/emulate",
-                body: json.encode(
-                    {}..addAll(
-                        widget.values.map(mapEntry)
-                    )..addAll(
-                        widget.emulationValues.map(mapEntry)
-                    )..addAll(
-                        widget.tokenizationValues.map(mapEntry)
-                    )
-                )
-            );
-          });
-        },
-        child: const Text('Начать эмуляцию'),
-      );
-    } else {
+  Widget getQueryWidget() {
+    return FutureBuilder<Widget>(
+      future: getQueryWidgetAsync(),
+      builder: (context, snapshot) {
+        print(1);
+        if (snapshot.hasData) {
+          print(2);
+          return snapshot.data;
+        }
+        return CircularProgressIndicator();
+      },
+    );
+  }
+
+  Future<Widget> getQueryWidgetAsync() async {
+    if (requestPending) {
+      print(3);
       return FutureBuilder<http.Response>(
         future: future,
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            print(snapshot.data.statusCode);
-            return Text('Эмуляция запущена');
+            print(snapshot.data.body);
+            Map<String, dynamic> response = jsonDecode(snapshot.data.body);
+            String id = response['result']['emulation_uuid'];
+            print(id);
+            _writeIdToSP(id);
+            return getQueryWidget();
           } else if (snapshot.hasError) {
             return Text('Ошибка');
           }
           return CircularProgressIndicator();
         },
       );
+    } else {
+      print(4);
+      SharedPreferences sp = await SharedPreferences.getInstance();
+      String id;
+      if (sp.containsKey('uuid')) {
+        id = sp.getString('uuid');
+      }
+      print(id);
+      if (id == null) {
+        print(5);
+        return MaterialButton(
+          color: Theme
+              .of(context)
+              .primaryColor,
+          textColor: Colors.white,
+          onPressed: () {
+            setState(() {
+              requestPending = true;
+              future = http.post(
+                  "http://emulation.dlbas.me/emulate",
+                  body: json.encode(
+                      {}..addAll(
+                          widget.values.map(mapEntry)
+                      )..addAll(
+                          widget.emulationValues.map(mapEntry)
+                      )..addAll(
+                          widget.tokenizationValues.map(mapEntry)
+                      )
+                  )
+              );
+            });
+          },
+          child: const Text('Начать эмуляцию'),
+        );
+      } else {
+        print(6);
+        return CircularProgressIndicator(strokeWidth: 1);
+      }
     }
+  }
+
+  void _writeIdToSP(String id) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('uuid', id);
   }
 
   var mapEntry = (key, value) => MapEntry(key.toString().split('.').last, value);
