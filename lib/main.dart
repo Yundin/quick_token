@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-//import 'package:charts_flutter/flutter.dart' as charts;
-//import 'package:flutter_plot/flutter_plot.dart';
+import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() => runApp(MyApp());
@@ -344,19 +343,17 @@ class _RialtoScreenState extends State<RialtoScreen> {
         _createHundredSlider(RialtoValue.placementRate),
         Padding(
           padding: EdgeInsets.only(top: 70),
-          child: getQueryWidget(),
+          child: getButtonWidget(),
         )
       ],
     );
   }
 
-  Widget getQueryWidget() {
+  Widget getButtonWidget() {
     return FutureBuilder<Widget>(
-      future: getQueryWidgetAsync(),
+      future: getButtonWidgetAsync(),
       builder: (context, snapshot) {
-        print(1);
         if (snapshot.hasData) {
-          print(2);
           return snapshot.data;
         }
         return CircularProgressIndicator();
@@ -364,35 +361,48 @@ class _RialtoScreenState extends State<RialtoScreen> {
     );
   }
 
-  Future<Widget> getQueryWidgetAsync() async {
+  Future<Widget> getButtonWidgetAsync() async {
     if (requestPending) {
-      print(3);
       return FutureBuilder<http.Response>(
         future: future,
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            print(snapshot.data.body);
+            requestPending = false;
             Map<String, dynamic> response = jsonDecode(snapshot.data.body);
             String id = response['result']['emulation_uuid'];
-            print(id);
             _writeIdToSP(id);
-            return getQueryWidget();
+            return getButtonWidget();
           } else if (snapshot.hasError) {
-            return Text('Ошибка');
+            requestPending = false;
+            return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  const Text('Ошибка'),
+                  MaterialButton(
+                    color: Theme
+                        .of(context)
+                        .primaryColor,
+                    textColor: Colors.white,
+                    onPressed: () {
+                      setState(() {
+                        _sendRequest();
+                      });
+                    },
+                    child: const Text('Повторить')
+                  )
+                ]
+            );
           }
           return CircularProgressIndicator();
         },
       );
     } else {
-      print(4);
       SharedPreferences sp = await SharedPreferences.getInstance();
       String id;
       if (sp.containsKey('uuid')) {
         id = sp.getString('uuid');
       }
-      print(id);
       if (id == null) {
-        print(5);
         return MaterialButton(
           color: Theme
               .of(context)
@@ -400,28 +410,48 @@ class _RialtoScreenState extends State<RialtoScreen> {
           textColor: Colors.white,
           onPressed: () {
             setState(() {
-              requestPending = true;
-              future = http.post(
-                  "http://emulation.dlbas.me/emulate",
-                  body: json.encode(
-                      {}..addAll(
-                          widget.values.map(mapEntry)
-                      )..addAll(
-                          widget.emulationValues.map(mapEntry)
-                      )..addAll(
-                          widget.tokenizationValues.map(mapEntry)
-                      )
-                  )
-              );
+              _sendRequest();
             });
           },
           child: const Text('Начать эмуляцию'),
         );
       } else {
-        print(6);
-        return CircularProgressIndicator(strokeWidth: 1);
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            const Text('Эмуляция запущена'),
+            MaterialButton(
+              color: Theme
+                  .of(context)
+                  .primaryColor,
+              textColor: Colors.white,
+              onPressed: () {
+                setState(() {
+                  _sendRequest();
+                });
+              },
+              child: const Text('Новая эмуляция'),
+            )
+          ],
+        );
       }
     }
+  }
+
+  void _sendRequest() {
+    requestPending = true;
+    future = http.post(
+        "http://emulation.dlbas.me/emulate",
+        body: json.encode(
+            {}..addAll(
+                widget.values.map(mapEntry)
+            )..addAll(
+                widget.emulationValues.map(mapEntry)
+            )..addAll(
+                widget.tokenizationValues.map(mapEntry)
+            )
+        )
+    );
   }
 
   void _writeIdToSP(String id) async {
@@ -445,33 +475,128 @@ class _RialtoScreenState extends State<RialtoScreen> {
 
 class ThreeButtonsWidget extends StatelessWidget {
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+//  @override
+//  Widget build(BuildContext context) {
+//    return Column(
+//        mainAxisAlignment: MainAxisAlignment.center,
+//        children: <Widget>[
+//          MaterialButton(
+//            minWidth: 180.0,
+//            color: Theme.of(context).primaryColor,
+//            textColor: Colors.white,
+//            onPressed: () {},
+//            child: Text('Купить')
+//          ),
+//          MaterialButton(
+//            minWidth: 180.0,
+//            color: Theme.of(context).primaryColor,
+//            textColor: Colors.white,
+//            onPressed: () {},
+//            child: Text('Продать')
+//          ),
+//          MaterialButton(
+//            minWidth: 180.0,
+//            color: Theme.of(context).primaryColor,
+//            textColor: Colors.white,
+//            onPressed: () {},
+//            child: Text('Воздержаться')
+//          )
+//        ]
+//    );
+//  }
+
+    Future<http.Response> future;
+    BuildContext context;
+
+    @override
+    Widget build(BuildContext context) {
+     this.context = context;
+//      return Center(
+//        child: getChartWidget(),
+//      );
+    return getChartWidget();
+    }
+
+    Widget getChartWidget() {
+      return FutureBuilder<Widget>(
+        future: getChartWidgetAsync(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return snapshot.data;
+          }
+          return CircularProgressIndicator();
+        },
+      );
+    }
+
+    Future<Widget> getChartWidgetAsync() async {
+      SharedPreferences sp = await SharedPreferences.getInstance();
+      String id;
+      if (sp.containsKey('uuid')) {
+        id = sp.getString('uuid');
+      }
+      if (id == null) {
+        return const Text('Эмуляция не была запущена');
+      }
+      future = http.get("http://emulation.dlbas.me/results?uuid=" + id);
+      var response = await future;
+      if (response.statusCode != 200) {
+        return const Text('Результат недоступен');
+      }
+      Map<String, dynamic> responseMap = jsonDecode(response.body);
+      int i = 0;
+      var priceList = (responseMap['result']['price_stats'] as List).map((num) => Pair(i++, num)).toList();
+      i = 0;
+      var liquidityList = (responseMap['result']['liquidity_stats'] as List).map((num) => Pair(i++, num)).toList();
+      i = 0;
+      var placementList = (responseMap['result']['placement_stats'] as List).map((num) => Pair(i++, num)).toList();
+      return Column(
         children: <Widget>[
-          MaterialButton(
-            minWidth: 180.0,
-            color: Theme.of(context).primaryColor,
-            textColor: Colors.white,
-            onPressed: () {},
-            child: Text('Купить')
-          ),
-          MaterialButton(
-            minWidth: 180.0,
-            color: Theme.of(context).primaryColor,
-            textColor: Colors.white,
-            onPressed: () {},
-            child: Text('Продать')
-          ),
-          MaterialButton(
-            minWidth: 180.0,
-            color: Theme.of(context).primaryColor,
-            textColor: Colors.white,
-            onPressed: () {},
-            child: Text('Воздержаться')
-          )
-        ]
-    );
-  }
+          getChart(priceList, 'Price'),
+          getChart(liquidityList, 'Liquidity'),
+          getChart(placementList, 'Placement')
+        ],
+      );
+    }
+
+    Container getChart(List<Pair> data, String name) {
+      return Container(
+        width: double.infinity,
+        height: MediaQuery.of(context).size.height / 3 - 50,
+        child: charts.LineChart(
+            [charts.Series<Pair, num>(
+                id: 'price_stats',
+                domainFn: (Pair p, _) => p.first,
+                measureFn: (Pair p, _) => p.second,
+                data: data
+            )] as List<charts.Series<Pair, num>>,
+            animate: true,
+            primaryMeasureAxis: charts.NumericAxisSpec(
+                tickProviderSpec:
+                charts.BasicNumericTickProviderSpec(
+                    desiredTickCount: 5,
+                    dataIsInWholeNumbers: false
+                )
+            ),
+            behaviors: [
+              charts.ChartTitle(name,
+                  behaviorPosition: charts.BehaviorPosition.start,
+                  titleOutsideJustification: charts.OutsideJustification.middleDrawArea
+              ),
+              charts.LinePointHighlighter(
+                  showHorizontalFollowLine:
+                  charts.LinePointHighlighterFollowLineType.all,
+                  showVerticalFollowLine:
+                  charts.LinePointHighlighterFollowLineType.all)
+            ]
+        )
+      );
+    }
+}
+
+class Pair {
+  final num first;
+  final num second;
+
+  Pair(this.first, this.second);
 }
