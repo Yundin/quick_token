@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Quick Token',
+      title: 'QuickToken',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
