@@ -46,7 +46,7 @@ class _MainPageState extends State<MainPage> {
     TokenizationValue.creditsCount : 30,
     TokenizationValue.PD : 20,
     TokenizationValue.LGD : 10,
-    TokenizationValue.creditSum : 50,
+    TokenizationValue.creditSum : 1000000,
   };
   final Map<EmulationValue, num> emulationValues = {
     EmulationValue.meanmoney : 100000,
@@ -250,7 +250,15 @@ class TokenizationScreen extends StatelessWidget {
         Text('LGD: ${values[TokenizationValue.LGD]}'),
         _createHundredSlider(TokenizationValue.LGD),
         Text('Сумма кредита: ${values[TokenizationValue.creditSum]}'),
-        _createHundredSlider(TokenizationValue.creditSum),
+        Slider(
+            value: values[TokenizationValue.creditSum].toDouble(),
+            max: 10000000,
+            min: 500000,
+            divisions: 19,
+            onChanged: (value) {
+              callback(TokenizationValue.creditSum, value.round());
+            }
+        )
       ],
     );
   }
@@ -510,11 +518,8 @@ class ThreeButtonsWidget extends StatelessWidget {
 
     @override
     Widget build(BuildContext context) {
-     this.context = context;
-//      return Center(
-//        child: getChartWidget(),
-//      );
-    return getChartWidget();
+       this.context = context;
+       return getChartWidget();
     }
 
     Widget getChartWidget() {
