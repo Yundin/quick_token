@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/scheduler.dart';
 
 void main() => runApp(MyApp());
 
@@ -151,6 +152,11 @@ class _MainPageState extends State<MainPage> {
         (RialtoValue index, num value) {
           setState(() {
             rialtoValues[index] = value;
+          });
+        },
+        () {
+          setState(() {
+            _selectedBarIndex = 4;
           });
         }
     );
@@ -339,9 +345,10 @@ class RialtoScreen extends StatefulWidget {
   final Map<EmulationValue, num> emulationValues;
   final Map<TokenizationValue, num> tokenizationValues;
   final Function(RialtoValue index, num value) callback;
+  final Function() startEmulationCallback;
 
 
-  RialtoScreen(this.values, this.emulationValues, this.tokenizationValues, this.callback);
+  RialtoScreen(this.values, this.emulationValues, this.tokenizationValues, this.callback, this.startEmulationCallback);
 
   @override
   _RialtoScreenState createState() => _RialtoScreenState();
@@ -405,6 +412,7 @@ class _RialtoScreenState extends State<RialtoScreen> {
             Map<String, dynamic> response = jsonDecode(snapshot.data.body);
             String id = response['result']['emulation_uuid'];
             _writeIdToSP(id);
+            SchedulerBinding.instance.addPostFrameCallback((_) => widget.startEmulationCallback());
             return getButtonWidget();
           } else if (snapshot.hasError) {
             requestPending = false;
