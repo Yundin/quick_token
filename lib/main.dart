@@ -516,40 +516,16 @@ class _RialtoScreenState extends State<RialtoScreen> {
   }
 }
 
-class ThreeButtonsWidget extends StatelessWidget {
+class ThreeButtonsWidget extends StatefulWidget {
 
-//  @override
-//  Widget build(BuildContext context) {
-//    return Column(
-//        mainAxisAlignment: MainAxisAlignment.center,
-//        children: <Widget>[
-//          MaterialButton(
-//            minWidth: 180.0,
-//            color: Theme.of(context).primaryColor,
-//            textColor: Colors.white,
-//            onPressed: () {},
-//            child: Text('Купить')
-//          ),
-//          MaterialButton(
-//            minWidth: 180.0,
-//            color: Theme.of(context).primaryColor,
-//            textColor: Colors.white,
-//            onPressed: () {},
-//            child: Text('Продать')
-//          ),
-//          MaterialButton(
-//            minWidth: 180.0,
-//            color: Theme.of(context).primaryColor,
-//            textColor: Colors.white,
-//            onPressed: () {},
-//            child: Text('Воздержаться')
-//          )
-//        ]
-//    );
-//  }
+  @override
+  State createState() => _ThreeButtonsWidgetState();
+}
 
-    Future<http.Response> future;
+class _ThreeButtonsWidgetState extends State<ThreeButtonsWidget> {
+
     BuildContext context;
+    Future<http.Response> future;
 
     @override
     Widget build(BuildContext context) {
@@ -563,6 +539,23 @@ class ThreeButtonsWidget extends StatelessWidget {
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             return snapshot.data;
+          } else if (snapshot.hasError) {
+            return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  const Text('Ошибка'),
+                  MaterialButton(
+                      color: Theme
+                          .of(context)
+                          .primaryColor,
+                      textColor: Colors.white,
+                      onPressed: () {
+                        setState(() {});
+                      },
+                      child: const Text('Повторить')
+                  )
+                ]
+            );
           }
           return CircularProgressIndicator();
         },
