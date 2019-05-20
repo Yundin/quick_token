@@ -610,6 +610,7 @@ class _ThreeButtonsWidgetState extends State<ThreeButtonsWidget> {
             primaryMeasureAxis: charts.NumericAxisSpec(
                 tickProviderSpec:
                 charts.BasicNumericTickProviderSpec(
+                    zeroBound: false,
                     desiredTickCount: 5,
                     dataIsInWholeNumbers: false
                 )
