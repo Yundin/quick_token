@@ -272,7 +272,7 @@ class TokenizationScreen extends StatelessWidget {
             value: values[TokenizationValue.creditSum].toDouble(),
             max: 10000000,
             min: 500000,
-            divisions: 19,
+            divisions: 95,
             onChanged: (value) {
               callback(TokenizationValue.creditSum, value.round());
             }
@@ -308,8 +308,9 @@ class EmulationScreen extends StatelessWidget {
         Text('Начальные деньги людей: ${getBigNumber(values[EmulationValue.meanmoney])}'),
         Slider(
             value: values[EmulationValue.meanmoney].toDouble(),
-            max: 1000000,
-            divisions: 20,
+            max: 10000000,
+            min: 500000,
+            divisions: 95,
             onChanged: (value) {
               callback(EmulationValue.meanmoney, value.round());
             }
