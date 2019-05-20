@@ -55,19 +55,19 @@ class _MainPageState extends State<MainPage> {
     CalcValue.portfolioSum : 1000000,
   };
   final Map<TokenizationValue, num> tokenizationValues = {
-    TokenizationValue.creditsCount : 30,
+    TokenizationValue.creditsCount : 5,
     TokenizationValue.PD : 20,
     TokenizationValue.LGD : 10,
     TokenizationValue.creditSum : 1000000,
   };
   final Map<EmulationValue, num> emulationValues = {
-    EmulationValue.meanmoney : 100000,
+    EmulationValue.meanmoney : 700000,
     EmulationValue.peopleCount : 5,
     EmulationValue.days : 60
   };
   final Map<RialtoValue, num> rialtoValues = {
-    RialtoValue.attractionRate : 0.05,
-    RialtoValue.placementRate : 0.1,
+    RialtoValue.attractionRate : 0.1,
+    RialtoValue.placementRate : 0.2,
   };
 
   @override
