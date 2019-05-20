@@ -54,8 +54,8 @@ class _MainPageState extends State<MainPage> {
     EmulationValue.days : 60
   };
   final Map<RialtoValue, num> rialtoValues = {
-    RialtoValue.attractionRate : 5,
-    RialtoValue.placementRate : 10,
+    RialtoValue.attractionRate : 0.05,
+    RialtoValue.placementRate : 0.1,
   };
 
   @override
@@ -86,7 +86,7 @@ class _MainPageState extends State<MainPage> {
               BottomNavigationBarItem(icon: Icon(Icons.group), title: Text('Emulation')),
               BottomNavigationBarItem(icon: Icon(Icons.account_balance), title: Text('Rialto')),
               BottomNavigationBarItem(icon: Icon(Icons.cloud_off), title: Text('Calculator')),
-              BottomNavigationBarItem(icon: Icon(Icons.account_box), title: Text('Account'))
+              BottomNavigationBarItem(icon: Icon(Icons.show_chart), title: Text('Result'))
             ],
             currentIndex: _selectedBarIndex,
             onTap: (int index) {
@@ -345,10 +345,24 @@ class _RialtoScreenState extends State<RialtoScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
-        Text('Ставка привлечения: ${widget.values[RialtoValue.attractionRate]}'),
-        _createHundredSlider(RialtoValue.attractionRate),
-        Text('Ставка размещения: ${widget.values[RialtoValue.placementRate]}'),
-        _createHundredSlider(RialtoValue.placementRate),
+        Text('Ставка привлечения: ${(widget.values[RialtoValue.attractionRate] * 100).round()}'),
+        Slider(
+          value: widget.values[RialtoValue.attractionRate],
+          max: 1,
+          divisions: 20,
+          onChanged: (value) {
+            widget.callback(RialtoValue.attractionRate, value);
+          }
+        ),
+        Text('Ставка размещения: ${(widget.values[RialtoValue.placementRate] * 100).round()}'),
+        Slider(
+            value: widget.values[RialtoValue.placementRate],
+            max: 1,
+            divisions: 20,
+            onChanged: (value) {
+              widget.callback(RialtoValue.placementRate, value);
+            }
+        ),
         Padding(
           padding: EdgeInsets.only(top: 70),
           child: getButtonWidget(),
@@ -555,12 +569,15 @@ class ThreeButtonsWidget extends StatelessWidget {
       var liquidityList = (responseMap['result']['liquidity_stats'] as List).map((num) => Pair(i++, num)).toList();
       i = 0;
       var placementList = (responseMap['result']['placement_stats'] as List).map((num) => Pair(i++, num)).toList();
-      return Column(
-        children: <Widget>[
-          getChart(priceList, 'Price'),
-          getChart(liquidityList, 'Liquidity'),
-          getChart(placementList, 'Placement')
-        ],
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: 10),
+        child: Column(
+          children: <Widget>[
+            getChart(priceList, 'Цена актива'),
+            getChart(liquidityList, 'Кол-во реализованных заявок к общему количеству'),
+            getChart(placementList, 'Кол-во неразмещённых активов на балансе банка')
+          ],
+        )
       );
     }
 
@@ -585,8 +602,9 @@ class ThreeButtonsWidget extends StatelessWidget {
             ),
             behaviors: [
               charts.ChartTitle(name,
-                  behaviorPosition: charts.BehaviorPosition.start,
-                  titleOutsideJustification: charts.OutsideJustification.middleDrawArea
+                  behaviorPosition: charts.BehaviorPosition.top,
+                  titleOutsideJustification: charts.OutsideJustification.middleDrawArea,
+                  titleStyleSpec: charts.TextStyleSpec(fontSize: 10)
               ),
               charts.LinePointHighlighter(
                   showHorizontalFollowLine:
