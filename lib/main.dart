@@ -7,6 +7,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() => runApp(MyApp());
 
+String getBigNumber(num number) {
+  var str = number.toString();
+  for (var i = str.length - 1, j = 0; i > 0; i--, j++) {
+    if (j == 2) {
+      str = str.substring(0, i) + ' ' + str.substring(i, str.length);
+      i--;
+      j = 0;
+    }
+  }
+  return str;
+}
+
 class MyApp extends StatelessWidget {
 
   @override
@@ -197,7 +209,7 @@ class CalcScreen extends StatelessWidget {
             callback(CalcValue.placementTime, value.round());
           },
         ),
-        Text('Сумма токенизируемого портфеля: ${values[CalcValue.portfolioSum]}'),
+        Text('Сумма токенизируемого портфеля: ${getBigNumber(values[CalcValue.portfolioSum])}'),
         Slider(
           value: values[CalcValue.portfolioSum].toDouble(),
           max: 10000000,
@@ -249,7 +261,7 @@ class TokenizationScreen extends StatelessWidget {
         _createHundredSlider(TokenizationValue.PD),
         Text('LGD: ${values[TokenizationValue.LGD]}'),
         _createHundredSlider(TokenizationValue.LGD),
-        Text('Сумма кредита: ${values[TokenizationValue.creditSum]}'),
+        Text('Сумма кредита: ${getBigNumber(values[TokenizationValue.creditSum])}'),
         Slider(
             value: values[TokenizationValue.creditSum].toDouble(),
             max: 10000000,
@@ -287,7 +299,7 @@ class EmulationScreen extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
-        Text('Начальные деньги людей: ${values[EmulationValue.meanmoney]}'),
+        Text('Начальные деньги людей: ${getBigNumber(values[EmulationValue.meanmoney])}'),
         Slider(
             value: values[EmulationValue.meanmoney].toDouble(),
             max: 1000000,
